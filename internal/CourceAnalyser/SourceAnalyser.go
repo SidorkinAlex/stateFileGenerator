@@ -30,6 +30,7 @@ func visitFile(path string, f os.FileInfo, err error, writer *csv.Writer, rootPa
 	}
 	if "" == manifest.Version {
 		log.Fatal("version in manifest is empty")
+		return nil
 	}
 	if !f.IsDir() {
 
