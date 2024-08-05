@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	go build -v ./cmd/directory_merging/main.go
+	go build -v ./cmd/stateFIleGenerator/main.go
 
 .PHONY: test
 test:

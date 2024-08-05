@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/SidorkinAlex/stateFileGenerator/internal/CliApgParser"
+	"github.com/SidorkinAlex/stateFileGenerator/internal/CourceAnalyser"
 	"log"
-	"stateFileGenerator/internal/CliApgParser"
-	"stateFileGenerator/internal/CourceAnalyser"
-	"stateFileGenerator/internal/copyFiler"
 )
 
 func main() {
@@ -14,10 +13,6 @@ func main() {
 	log.Println(Args)
 	if Args.Action == "init" {
 		CourceAnalyser.Anaslyse(Args.Sources[0])
-		copyFiler.Copy(Args.Sources[0]+"/.result.csv", Args.Sources[0], Args.TargetDir)
-	}
-	if Args.Action == "status" {
-		CourceAnalyser.CheckHashes(Args)
 	}
 	fmt.Println("\n")
 	fmt.Println("\n")

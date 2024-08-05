@@ -4,6 +4,8 @@ import (
 	"crypto/sha1"
 	"encoding/csv"
 	"fmt"
+	"github.com/SidorkinAlex/stateFileGenerator/internal/Encoder"
+	"github.com/SidorkinAlex/stateFileGenerator/internal/ManifestReader"
 	"io"
 	"log"
 	"os"
@@ -11,7 +13,12 @@ import (
 	"strings"
 )
 
-func visitFile(path string, f os.FileInfo, err error, writer *csv.Writer, rootPath string, ignore []string) error {
+const fileNameIgnore = ".consistencyIgnore"
+const directoryFilesChecker = ".consistency"
+const analyseFileSource = ".result.lock"
+const manifestFile = "manifest.json"
+
+func visitFile(path string, f os.FileInfo, err error, writer *csv.Writer, rootPath string, ignore []string, manifest ManifestReader.Manifest) error {
 	if err != nil {
 		return err
 	}
@@ -20,6 +27,9 @@ func visitFile(path string, f os.FileInfo, err error, writer *csv.Writer, rootPa
 			log.Println("ignore file " + path + "they including in ignore file " + rootPath + "/" + value + " in number " + string(index))
 			return nil
 		}
+	}
+	if "" == manifest.Version {
+		log.Fatal("version in manifest is empty")
 	}
 	if !f.IsDir() {
 
@@ -41,8 +51,11 @@ func visitFile(path string, f os.FileInfo, err error, writer *csv.Writer, rootPa
 			return err
 		}
 
+		encodedFilePath := Encoder.EncodeFromKey(relPath, manifest.Version)
+		encodedHash := Encoder.EncodeFromKey(hash, manifest.Version)
+
 		// Экспорт в CSV с относительным путем в названии файла
-		err = writer.Write([]string{relPath, hash})
+		err = writer.Write([]string{encodedFilePath, encodedHash})
 		if err != nil {
 			return err
 		}
@@ -51,7 +64,7 @@ func visitFile(path string, f os.FileInfo, err error, writer *csv.Writer, rootPa
 }
 
 func Anaslyse(root string) {
-	outputFile, err := os.Create(root + "/.directory_merging/.result.csv")
+	outputFile, err := os.Create(root + "/" + directoryFilesChecker + "/" + analyseFileSource)
 	if err != nil {
 		log.Fatalf("ошибка при создании файла: %v\n", err)
 		return
@@ -62,8 +75,9 @@ func Anaslyse(root string) {
 	defer writer.Flush()
 	arrIgnore := createIgnoreDirList(root)
 	log.Println(arrIgnore)
+	manifest := ManifestReader.ManifestRead(root + "/" + manifestFile)
 	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		return visitFile(path, info, err, writer, root, arrIgnore)
+		return visitFile(path, info, err, writer, root, arrIgnore, manifest)
 	})
 	if err != nil {
 		fmt.Printf("ошибка при обходе папки: %v\n", err)
@@ -73,13 +87,13 @@ func Anaslyse(root string) {
 func createIgnoreDirList(rootPath string) []string {
 	var arrIgnore []string
 
-	ignoreFile := rootPath + "/.directory_mergingIgnore"
+	ignoreFile := rootPath + "/" + fileNameIgnore
 	ignoreData, err := os.ReadFile(ignoreFile)
 	if err != nil {
 		fmt.Println(err)
 	}
 	arrIgnore = strings.Split(string(ignoreData), "\n")
-	arrIgnore = append(arrIgnore, ".directory_merging")
+	arrIgnore = append(arrIgnore, directoryFilesChecker)
 	return filterEmptyStrings(arrIgnore)
 }
 func filterEmptyStrings(arr []string) []string {

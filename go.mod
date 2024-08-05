@@ -1,1 +1,1 @@
-module stateFileGenerator
+module github.com/SidorkinAlex/stateFileGenerator
